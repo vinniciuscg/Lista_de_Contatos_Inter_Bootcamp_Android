@@ -19,7 +19,6 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        progressBar.visibility = View.GONE
 
         setupToolBar("Lista de Contatos", false)
         setupListView()
@@ -44,15 +43,22 @@ class MainActivity : BaseActivity() {
         var stringBusca = caixaTextoBusca.text.toString()
         var listaFiltrada: List<Contato> = mutableListOf()
 
-        try {
-            listaFiltrada = ContatoAplication.instance.helperDB?.buscarContato(stringBusca, false) ?: mutableListOf()
-        }catch (ex: Exception){
-            ex.printStackTrace()
-        }
+        progressBarMain.visibility = View.VISIBLE
+        Thread( Runnable {
+            Thread.sleep(1000)
+            try {
+                listaFiltrada = ContatoAplication.instance.helperDB?.buscarContato(stringBusca, false) ?: mutableListOf()
+            }catch (ex: Exception){
+                ex.printStackTrace()
+            }
 
-        adapter = ContatoAdapter(this, listaFiltrada.sortedBy { it.nome.toLowerCase() }) { onClickItemRecyclerView(it)}
-        recyclerView.adapter = adapter
-        Toast.makeText(this,"${listaFiltrada.size} resultados encontrados",Toast.LENGTH_SHORT).show()
+            runOnUiThread {
+                adapter = ContatoAdapter(this, listaFiltrada.sortedBy { it.nome.toLowerCase() }) { onClickItemRecyclerView(it)}
+                recyclerView.adapter = adapter
+                Toast.makeText(this,"${listaFiltrada.size} resultados encontrados",Toast.LENGTH_SHORT).show()
+                progressBarMain.visibility = View.GONE
+            }
+        }).start()
     }
 
     fun adicionar(){
