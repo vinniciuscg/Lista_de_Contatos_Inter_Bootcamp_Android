@@ -1,14 +1,13 @@
 package com.example.listadecontatos
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import kotlinx.android.synthetic.main.activity_contato.*
-import kotlinx.android.synthetic.main.activity_main.*
+import com.example.listadecontatos.ContatoAplication
 
 class ContatoActivity : BaseActivity() {
 
-    private var index: Int = -1
+    private var idContato: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,13 +20,15 @@ class ContatoActivity : BaseActivity() {
 
     fun setupContato(){
 
-        var index = intent.getIntExtra("index", -1)
-        if(index == -1){ // Novo Contato - Criando Contato
+        idContato = intent.getIntExtra("index", -1)
+        if(idContato == -1){ // Novo Contato - Criando Contato
             btnExcluir.visibility = View.GONE
             return
         }
-        txNome.setText(ContatoSingleton.lista[index].nome)
-        txTelefone.setText(ContatoSingleton.lista[index].telefone)
+        var lista = ContatoAplication.instance.helperDB?.buscarContato("$idContato", true) ?: return
+        var contato = lista.getOrNull(0) ?: return
+        txNome.setText(contato.nome)
+        txTelefone.setText(contato.telefone)
     }
 
     private fun setListeners(){
@@ -38,19 +39,19 @@ class ContatoActivity : BaseActivity() {
     private fun salvarContato(){
         var nome = txNome.text.toString()
         var telefone = txTelefone.text.toString()
-        val contato = Contato(ContatoSingleton.lista.size, nome, telefone)
+        val contato = Contato(idContato, nome, telefone)
 
-        if (index == -1){ // Novo Contato
-            ContatoSingleton.lista.add(contato)
+        if (idContato == -1){ // Novo Contato
+            ContatoAplication.instance.helperDB?.salvarContato(contato)
         }else{
-            ContatoSingleton.lista.add(index, contato)
+            ContatoAplication.instance.helperDB?.updateContato(contato)
         }
         finish()
     }
 
     private fun excluiContato(){
-        if (index > -1){
-            ContatoSingleton.lista.removeAt(index)
+        if (idContato > -1){
+            ContatoAplication.instance.helperDB?.deletarContato(idContato)
             finish()
         }
     }

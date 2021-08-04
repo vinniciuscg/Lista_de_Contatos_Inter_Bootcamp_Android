@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
+import com.example.listadecontatos.ContatoAplication
+import kotlinx.android.synthetic.main.activity_contato.*
 
 class MainActivity : BaseActivity() {
 
@@ -19,22 +21,18 @@ class MainActivity : BaseActivity() {
         setContentView(R.layout.activity_main)
         progressBar.visibility = View.GONE
 
-        geraListaDeContatos()
         setupToolBar("Lista de Contatos", false)
         setupListView()
         setupOnClicks()
     }
 
-    private fun geraListaDeContatos(){
-        ContatoSingleton.lista.add(Contato(1, "Vine", "9999-9999"))
-        ContatoSingleton.lista.add(Contato(2, "Marcos", "8888-9999"))
-        ContatoSingleton.lista.add(Contato(2, "Gomes", "7777-9999"))
-    }
-
     private fun setupListView() {
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = ContatoAdapter(this, ContatoSingleton.lista){ onClickItemRecyclerView(it) }
-        recyclerView.adapter = adapter
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        buscar()
     }
 
     private fun setupOnClicks() {
@@ -44,23 +42,23 @@ class MainActivity : BaseActivity() {
 
     fun buscar(){
         var stringBusca = caixaTextoBusca.text.toString()
-        var listaFiltrada: List<Contato> = ContatoSingleton.lista
+        var listaFiltrada: List<Contato> = mutableListOf()
 
-        if(!stringBusca.isNullOrEmpty()){
-            listaFiltrada = ContatoSingleton.lista.filter { contato ->
-                if (contato.nome.toLowerCase().contains(stringBusca.toLowerCase())){
-                    return@filter true
-                }
-                return@filter false
-            }
+        try {
+            listaFiltrada = ContatoAplication.instance.helperDB?.buscarContato(stringBusca, false) ?: mutableListOf()
+        }catch (ex: Exception){
+            ex.printStackTrace()
         }
 
-        adapter = ContatoAdapter(this, listaFiltrada) { onClickItemRecyclerView(it)}
+        adapter = ContatoAdapter(this, listaFiltrada.sortedBy { it.nome.toLowerCase() }) { onClickItemRecyclerView(it)}
         recyclerView.adapter = adapter
-        Toast.makeText(this,"Buscando por $stringBusca",Toast.LENGTH_SHORT).show()
+        Toast.makeText(this,"${listaFiltrada.size} resultados encontrados",Toast.LENGTH_SHORT).show()
     }
 
-    fun adicionar(){}
+    fun adicionar(){
+        val intent = Intent(this, ContatoActivity::class.java)
+        startActivity(intent)
+    }
 
     fun onClickItemRecyclerView(index: Int){
         val intent = Intent(this, ContatoActivity::class.java) // implementar
